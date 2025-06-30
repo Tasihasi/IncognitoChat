@@ -4,6 +4,9 @@ npm-debug.log
 .gitignore
 README.md
 .env
+.env.local
+.env.development
+.env.production
 .nyc_output
 coverage
 .cache

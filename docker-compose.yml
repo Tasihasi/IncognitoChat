@@ -1,14 +1,57 @@
 version: '3.8'
 
 services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: incognito-chat-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: incognito_chat
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: your_secure_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build: ./backend
+    container_name: incognito-chat-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://postgres:your_secure_password@postgres:5432/incognito_chat
+      - NODE_ENV=production
+      - PORT=5000
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  # Frontend (Production)
   incognito-chat:
     build: .
     ports:
       - "3000:80"
     container_name: incognito-chat-app
     restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000
 
-  # Development service (optional)
+  # Development services (optional)
   incognito-chat-dev:
     build:
       context: .
@@ -20,5 +63,31 @@ services:
       - .:/app
       - /app/node_modules
     command: npm run dev -- --host 0.0.0.0
+    depends_on:
+      - backend
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000
     profiles:
       - dev
+
+  backend-dev:
+    build: ./backend
+    container_name: incognito-chat-backend-dev
+    ports:
+      - "5001:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://postgres:your_secure_password@postgres:5432/incognito_chat
+      - NODE_ENV=development
+      - PORT=5000
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: npm run dev
+    profiles:
+      - dev
+
+volumes:
+  postgres_data:
