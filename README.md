@@ -15,3 +15,15 @@ If you are developing a production application, we recommend using TypeScript wi
 # Project Goal 
 
 Create an anonim chat app 
+
+## Create a react front end 
+
+## Crate a django backend 
+
+## Create a database ( not decided what db )
+
+## Fully containarize 
+
+## Implement a full CI/CD pipeline into the git Actions 
+
+## Deploy to AWS with a live version
